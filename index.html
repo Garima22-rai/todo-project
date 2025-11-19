@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Smart Todo App</title>
+
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        background: linear-gradient(135deg, #6a11cb, #2575fc);
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    #container {
+        background: white;
+        width: 380px;
+        padding: 25px;
+        border-radius: 20px;
+        box-shadow: 0px 0px 30px rgba(0,0,0,0.2);
+    }
+
+    h2 {
+        color: #333;
+        text-align: center;
+    }
+
+    input {
+        width: 90%;
+        padding: 12px;
+        border-radius: 10px;
+        border: 1px solid gray;
+        margin-top: 10px;
+    }
+
+    button {
+        margin-top: 15px;
+        width: 100%;
+        padding: 12px;
+        border: none;
+        font-size: 16px;
+        color: white;
+        background: #2575fc;
+        border-radius: 10px;
+        cursor: pointer;
+    }
+
+    button:hover {
+        background: #6a11cb;
+    }
+
+    .taskBox {
+        background: #f7f7f7;
+        padding: 12px;
+        border-radius: 10px;
+        margin-top: 10px;
+    }
+
+    .completed {
+        text-decoration: line-through;
+        color: green;
+    }
+
+    .date {
+        font-size: 12px;
+        color: gray;
+    }
+
+    .filter-btn {
+        background: #6a11cb;
+        padding: 8px;
+        width: 32%;
+        border-radius: 10px;
+        font-size: 14px;
+        cursor: pointer;
+        border: none;
+        color: white;
+    }
+
+    #todoSection, #allTasksPage {
+        display: none;
+    }
+</style>
+</head>
+
+<body>
+
+<div id="container">
+
+    <!-- WELCOME PAGE -->
+    <div id="welcomeSection">
+        <h2>Welcome 👋</h2>
+        <p style="text-align:center;">Enter your name to continue</p>
+        <input type="text" id="username" placeholder="Your Name">
+        <button onclick="startApp()">Start</button>
+    </div>
+
+    <!-- TODO APP PAGE -->
+    <div id="todoSection">
+        <h2 id="welcomeUser"></h2>
+
+        <input type="text" id="taskInput" placeholder="Enter a task">
+        <button onclick="addTask()">Add Task</button>
+
+        <br><br>
+
+        <button class="filter-btn" onclick="showAll()">All</button>
+        <button class="filter-btn" onclick="showCompleted()">Completed</button>
+        <button class="filter-btn" onclick="showPending()">Pending</button>
+
+        <button class="filter-btn" style="width:100%;margin-top:10px;" onclick="openAllTasks()">View All Tasks</button>
+
+        <div id="taskList"></div>
+    </div>
+
+    <!-- ALL TASKS PAGE -->
+    <div id="allTasksPage">
+        <h2>All Tasks 📋</h2>
+        <div id="allTasksList"></div>
+
+        <button onclick="backToTodo()" 
+                style="margin-top:15px;background:#2575fc;color:white;padding:10px;border:none;border-radius:10px;width:100%;">
+            Back to Todo
+        </button>
+    </div>
+
+</div>
+
+<script>
+let tasks = [];
+
+function startApp() {
+    let name = document.getElementById("username").value;
+    if (name.trim() === "") {
+        alert("Please enter your name");
+        return;
+    }
+
+    localStorage.setItem("todoUser", name);
+
+    document.getElementById("welcomeSection").style.display = "none";
+    document.getElementById("todoSection").style.display = "block";
+
+    document.getElementById("welcomeUser").innerText = "Welcome, " + name + " 👋";
+}
+
+function addTask() {
+    let taskText = document.getElementById("taskInput").value;
+    if (taskText.trim() === "") return;
+
+    let now = new Date();
+    let fullDate = now.toLocaleDateString();
+    let time = now.toLocaleTimeString();
+
+    tasks.push({
+        text: taskText,
+        completed: false,
+        date: fullDate,
+        time: time
+    });
+
+    document.getElementById("taskInput").value = "";
+    displayTasks();
+}
+
+function displayTasks(filter = "all") {
+    let container = document.getElementById("taskList");
+    container.innerHTML = "";
+
+    tasks.forEach((task, index) => {
+
+        if (filter === "completed" && !task.completed) return;
+        if (filter === "pending" && task.completed) return;
+
+        let div = document.createElement("div");
+        div.className = "taskBox";
+
+        div.innerHTML = `
+            <p class="${task.completed ? 'completed' : ''}">
+                ${task.text}
+                <br>
+                <span class="date">📅 ${task.date} | ⏰ ${task.time}</span>
+            </p>
+            <button onclick="toggleTask(${index})" 
+                style="margin-top:8px;background:#2575fc;">Mark Completed</button>
+        `;
+
+        container.appendChild(div);
+    });
+}
+
+function toggleTask(index) {
+    tasks[index].completed = !tasks[index].completed;
+    displayTasks();
+}
+
+function showAll() { displayTasks("all"); }
+function showCompleted() { displayTasks("completed"); }
+function showPending() { displayTasks("pending"); }
+
+function openAllTasks() {
+    document.getElementById("todoSection").style.display = "none";
+    document.getElementById("allTasksPage").style.display = "block";
+
+    let container = document.getElementById("allTasksList");
+    container.innerHTML = "";
+
+    tasks.forEach(task => {
+        let div = document.createElement("div");
+        div.className = "taskBox";
+
+        div.innerHTML = `
+            <p class="${task.completed ? 'completed' : ''}">
+                ${task.text}
+                <br>
+                <span class="date">📅 ${task.date} | ⏰ ${task.time}</span>
+            </p>
+        `;
+
+        container.appendChild(div);
+    });
+}
+
+function backToTodo() {
+    document.getElementById("allTasksPage").style.display = "none";
+    document.getElementById("todoSection").style.display = "block";
+}
+
+window.onload = () => {
+    let savedName = localStorage.getItem("todoUser");
+
+    if (savedName) {
+        document.getElementById("welcomeSection").style.display = "none";
+        document.getElementById("todoSection").style.display = "block";
+        document.getElementById("welcomeUser").innerText = "Welcome, " + savedName + " 👋";
+    }
+};
+</script>
+
+</body>
+</html>
+
